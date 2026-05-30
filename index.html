@@ -1,1026 +1,682 @@
 <!DOCTYPE html>
-<html lang="es">
+<html>
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>NoctuLight - Luz Nocturna Automática con Sensor LDR</title>
-    <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@400;500;700&display=swap" rel="stylesheet">
+    <title>Inventario IDT</title>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://unpkg.com/sweetalert/dist/sweetalert.min.js"></script>
+
     <style>
-        :root {
-            --primary: #6366F1;
-            --primary-dark: #4F46E5;
-            --secondary: #EC4899;
-            --accent: #10B981;
-            --dark: #0F172A;
-            --light: #F8FAFC;
-            --gray: #64748B;
-            --gradient-1: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            --gradient-2: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
-            --gradient-3: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
-            --shadow-sm: 0 2px 10px rgba(0,0,0,0.05);
-            --shadow-md: 0 8px 30px rgba(0,0,0,0.12);
-            --shadow-lg: 0 20px 60px rgba(0,0,0,0.2);
-        }
+        .navbar { background-color: #4364EA !important; border-radius: 10px; }
 
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
+        /* Indicador de validación en tiempo real */
+        .campo-ok    { border-color: #198754 !important; }
+        .campo-error { border-color: #dc3545 !important; }
 
-        body {
-            font-family: 'DM Sans', sans-serif;
-            color: var(--dark);
-            background: var(--light);
-            overflow-x: hidden;
+        .feedback-campo {
+            font-size: 0.82rem;
+            margin-top: 4px;
+            min-height: 18px;
+            display: flex;
+            align-items: center;
+            gap: 5px;
         }
+        .feedback-campo.ok       { color: #198754; }
+        .feedback-campo.error    { color: #dc3545; }
+        .feedback-campo.checking { color: #6c757d; }
 
-        h1, h2, h3, h4, h5 {
-            font-family: 'Syne', sans-serif;
+        .spinner-field {
+            width: 14px; height: 14px;
+            border: 2px solid #ccc;
+            border-top-color: #6c757d;
+            border-radius: 50%;
+            display: inline-block;
+            animation: spin .6s linear infinite;
         }
+        @keyframes spin { to { transform: rotate(360deg); } }
 
-        /* Navigation */
-        nav {
+        .btn-salir {
             position: fixed;
-            top: 0;
-            left: 0;
-            right: 0;
-            z-index: 1000;
-            background: rgba(255, 255, 255, 0.95);
-            backdrop-filter: blur(10px);
-            padding: 1.5rem 5%;
-            box-shadow: var(--shadow-sm);
-            transition: all 0.3s;
-        }
-
-        nav.scrolled {
-            padding: 1rem 5%;
-            box-shadow: var(--shadow-md);
-        }
-
-        .nav-container {
-            max-width: 1400px;
-            margin: 0 auto;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-
-        .logo {
-            font-family: 'Syne', sans-serif;
-            font-size: 1.8rem;
-            font-weight: 800;
-            background: var(--gradient-1);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
-        }
-
-        .nav-links {
-            display: flex;
-            gap: 2.5rem;
-            list-style: none;
-        }
-
-        .nav-links a {
-            text-decoration: none;
-            color: var(--dark);
-            font-weight: 500;
-            transition: color 0.3s;
-            position: relative;
-        }
-
-        .nav-links a::after {
-            content: '';
-            position: absolute;
-            bottom: -5px;
-            left: 0;
-            width: 0;
-            height: 2px;
-            background: var(--primary);
-            transition: width 0.3s;
-        }
-
-        .nav-links a:hover::after {
-            width: 100%;
-        }
-
-        /* Hero Section */
-        .hero {
-            margin-top: 80px;
-            min-height: 90vh;
-            display: flex;
-            align-items: center;
-            position: relative;
-            overflow: hidden;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-        }
-
-        .hero::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 800"><defs><linearGradient id="g" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" style="stop-color:rgba(255,255,255,0.1)"/><stop offset="100%" style="stop-color:rgba(255,255,255,0)"/></linearGradient></defs><circle cx="200" cy="200" r="300" fill="url(%23g)"/><circle cx="900" cy="500" r="400" fill="url(%23g)"/></svg>');
-            background-size: cover;
-            opacity: 0.3;
-        }
-
-        .hero-container {
-            max-width: 1400px;
-            margin: 0 auto;
-            padding: 0 5%;
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 4rem;
-            align-items: center;
-            position: relative;
-            z-index: 1;
-        }
-
-        .hero-content h1 {
-            font-size: 4rem;
-            font-weight: 800;
-            line-height: 1.1;
-            margin-bottom: 1.5rem;
+            bottom: 24px;
+            left: 24px;
+            z-index: 9999;
+            background: linear-gradient(135deg, #dc3545, #a71d2a);
             color: white;
-            animation: fadeInUp 0.8s ease-out;
-        }
-
-        .hero-content p {
-            font-size: 1.25rem;
-            line-height: 1.8;
-            margin-bottom: 2rem;
-            color: rgba(255, 255, 255, 0.9);
-            animation: fadeInUp 0.8s ease-out 0.2s both;
-        }
-
-        .hero-buttons {
-            display: flex;
-            gap: 1.5rem;
-            animation: fadeInUp 0.8s ease-out 0.4s both;
-        }
-
-        .btn {
-            padding: 1rem 2.5rem;
-            border-radius: 50px;
-            font-weight: 600;
-            font-size: 1.1rem;
-            text-decoration: none;
-            transition: all 0.3s;
-            cursor: pointer;
             border: none;
-            display: inline-block;
-        }
-
-        .btn-primary {
-            background: white;
-            color: var(--primary);
-            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
-        }
-
-        .btn-primary:hover {
-            transform: translateY(-3px);
-            box-shadow: 0 15px 40px rgba(0,0,0,0.3);
-        }
-
-        .btn-secondary {
-            background: transparent;
-            color: white;
-            border: 2px solid white;
-        }
-
-        .btn-secondary:hover {
-            background: white;
-            color: var(--primary);
-        }
-
-        .hero-visual {
-            position: relative;
-            animation: fadeIn 1s ease-out 0.6s both;
-        }
-
-        .circuit-display {
-            background: white;
-            border-radius: 30px;
-            padding: 3rem;
-            box-shadow: var(--shadow-lg);
-            position: relative;
-        }
-
-        .circuit-icon {
-            width: 100%;
-            max-width: 500px;
-            margin: 0 auto;
-            display: block;
-        }
-
-        /* Features Section */
-        .features {
-            padding: 8rem 5%;
-            background: white;
-        }
-
-        .section-header {
-            text-align: center;
-            max-width: 700px;
-            margin: 0 auto 5rem;
-        }
-
-        .section-header .label {
-            display: inline-block;
-            padding: 0.5rem 1.5rem;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-            border-radius: 50px;
-            font-weight: 600;
+            border-radius: 12px;
+            padding: 12px 20px;
+            font-weight: 700;
             font-size: 0.9rem;
-            margin-bottom: 1.5rem;
-            letter-spacing: 1px;
+            cursor: pointer;
+            box-shadow: 0 4px 15px rgba(220,53,69,0.4);
+            transition: opacity .2s, transform .1s;
         }
-
-        .section-header h2 {
-            font-size: 3rem;
-            font-weight: 800;
-            margin-bottom: 1.5rem;
-            line-height: 1.2;
-        }
-
-        .section-header p {
-            font-size: 1.2rem;
-            color: var(--gray);
-            line-height: 1.8;
-        }
-
-        .features-grid {
-            max-width: 1400px;
-            margin: 0 auto;
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-            gap: 3rem;
-        }
-
-        .feature-card {
-            background: var(--light);
-            padding: 3rem;
-            border-radius: 20px;
-            transition: all 0.3s;
-            position: relative;
-            overflow: hidden;
-        }
-
-        .feature-card::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 0;
-            right: 0;
-            height: 4px;
-            background: var(--gradient-1);
-            transform: scaleX(0);
-            transform-origin: left;
-            transition: transform 0.3s;
-        }
-
-        .feature-card:hover::before {
-            transform: scaleX(1);
-        }
-
-        .feature-card:hover {
-            transform: translateY(-10px);
-            box-shadow: var(--shadow-md);
-        }
-
-        .feature-icon {
-            width: 70px;
-            height: 70px;
-            border-radius: 15px;
-            background: var(--gradient-1);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 2rem;
-            margin-bottom: 2rem;
-            box-shadow: var(--shadow-sm);
-        }
-
-        .feature-card h3 {
-            font-size: 1.5rem;
-            margin-bottom: 1rem;
-            font-weight: 700;
-        }
-
-        .feature-card p {
-            color: var(--gray);
-            line-height: 1.8;
-        }
-
-        /* Technical Specs */
-        .specs {
-            padding: 8rem 5%;
-            background: var(--dark);
-            color: white;
-            position: relative;
-            overflow: hidden;
-        }
-
-        .specs::before {
-            content: '';
-            position: absolute;
-            top: -50%;
-            right: -20%;
-            width: 800px;
-            height: 800px;
-            border-radius: 50%;
-            background: radial-gradient(circle, rgba(99, 102, 241, 0.1) 0%, transparent 70%);
-        }
-
-        .specs-container {
-            max-width: 1400px;
-            margin: 0 auto;
-            position: relative;
-            z-index: 1;
-        }
-
-        .specs-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-            gap: 3rem;
-            margin-top: 4rem;
-        }
-
-        .spec-item {
-            text-align: center;
-            padding: 2rem;
-            background: rgba(255, 255, 255, 0.05);
-            border-radius: 15px;
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            transition: all 0.3s;
-        }
-
-        .spec-item:hover {
-            background: rgba(255, 255, 255, 0.1);
-            transform: translateY(-5px);
-        }
-
-        .spec-value {
-            font-size: 3rem;
-            font-weight: 800;
-            background: var(--gradient-3);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
-            margin-bottom: 0.5rem;
-        }
-
-        .spec-label {
-            font-size: 1.1rem;
-            color: rgba(255, 255, 255, 0.7);
-        }
-
-        /* How It Works */
-        .how-it-works {
-            padding: 8rem 5%;
-            background: white;
-        }
-
-        .timeline {
-            max-width: 1000px;
-            margin: 4rem auto 0;
-            position: relative;
-        }
-
-        .timeline::before {
-            content: '';
-            position: absolute;
-            left: 50%;
-            top: 0;
-            bottom: 0;
-            width: 3px;
-            background: linear-gradient(180deg, var(--primary) 0%, var(--secondary) 100%);
-            transform: translateX(-50%);
-        }
-
-        .timeline-item {
-            display: flex;
-            margin-bottom: 4rem;
-            position: relative;
-        }
-
-        .timeline-item:nth-child(even) {
-            flex-direction: row-reverse;
-        }
-
-        .timeline-content {
-            flex: 1;
-            padding: 2rem;
-            background: var(--light);
-            border-radius: 20px;
-            box-shadow: var(--shadow-sm);
-            position: relative;
-            margin: 0 2rem;
-        }
-
-        .timeline-number {
-            position: absolute;
-            left: 50%;
-            transform: translateX(-50%);
-            width: 60px;
-            height: 60px;
-            border-radius: 50%;
-            background: var(--gradient-1);
-            color: white;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 1.5rem;
-            font-weight: 800;
-            box-shadow: 0 5px 20px rgba(99, 102, 241, 0.4);
-        }
-
-        .timeline-content h3 {
-            font-size: 1.5rem;
-            margin-bottom: 1rem;
-        }
-
-        /* Applications */
-        .applications {
-            padding: 8rem 5%;
-            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
-            color: white;
-        }
-
-        .applications-grid {
-            max-width: 1400px;
-            margin: 4rem auto 0;
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-            gap: 2rem;
-        }
-
-        .app-card {
-            background: rgba(255, 255, 255, 0.15);
-            backdrop-filter: blur(10px);
-            padding: 3rem;
-            border-radius: 20px;
-            border: 1px solid rgba(255, 255, 255, 0.2);
-            transition: all 0.3s;
-        }
-
-        .app-card:hover {
-            background: rgba(255, 255, 255, 0.25);
-            transform: translateY(-10px);
-        }
-
-        .app-card .icon {
-            font-size: 3rem;
-            margin-bottom: 1.5rem;
-        }
-
-        .app-card h3 {
-            font-size: 1.5rem;
-            margin-bottom: 1rem;
-        }
-
-        /* Team/Academic Section */
-        .academic {
-            padding: 8rem 5%;
-            background: white;
-        }
-
-        .academic-content {
-            max-width: 1200px;
-            margin: 4rem auto 0;
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 4rem;
-            align-items: center;
-        }
-
-        .academic-info {
-            background: var(--light);
-            padding: 3rem;
-            border-radius: 20px;
-        }
-
-        .info-item {
-            margin-bottom: 1.5rem;
-            display: flex;
-            align-items: start;
-            gap: 1rem;
-        }
-
-        .info-item .icon {
-            width: 40px;
-            height: 40px;
-            border-radius: 10px;
-            background: var(--gradient-1);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color: white;
-            flex-shrink: 0;
-        }
-
-        .info-item .text strong {
-            display: block;
-            margin-bottom: 0.25rem;
-            font-weight: 700;
-        }
-
-        .info-item .text span {
-            color: var(--gray);
-        }
-
-        /* CTA Section */
-        .cta {
-            padding: 8rem 5%;
-            background: var(--dark);
-            color: white;
-            text-align: center;
-        }
-
-        .cta h2 {
-            font-size: 3.5rem;
-            margin-bottom: 1.5rem;
-        }
-
-        .cta p {
-            font-size: 1.3rem;
-            margin-bottom: 3rem;
-            color: rgba(255, 255, 255, 0.8);
-            max-width: 700px;
-            margin-left: auto;
-            margin-right: auto;
-        }
-
-        /* Footer */
-        footer {
-            background: #000;
-            color: rgba(255, 255, 255, 0.6);
-            padding: 3rem 5%;
-            text-align: center;
-        }
-
-        footer p {
-            margin-bottom: 1rem;
-        }
-
-        footer .social-links {
-            display: flex;
-            justify-content: center;
-            gap: 1.5rem;
-            margin-top: 2rem;
-        }
-
-        footer .social-links a {
-            width: 40px;
-            height: 40px;
-            border-radius: 50%;
-            background: rgba(255, 255, 255, 0.1);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color: white;
-            text-decoration: none;
-            transition: all 0.3s;
-        }
-
-        footer .social-links a:hover {
-            background: var(--primary);
-            transform: translateY(-3px);
-        }
-
-        /* Animations */
-        @keyframes fadeInUp {
-            from {
-                opacity: 0;
-                transform: translateY(30px);
-            }
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
-        }
-
-        @keyframes fadeIn {
-            from {
-                opacity: 0;
-            }
-            to {
-                opacity: 1;
-            }
-        }
-
-        @keyframes float {
-            0%, 100% {
-                transform: translateY(0px);
-            }
-            50% {
-                transform: translateY(-20px);
-            }
-        }
-
-        .float-animation {
-            animation: float 3s ease-in-out infinite;
-        }
-
-        /* Responsive */
-        @media (max-width: 968px) {
-            .hero-container {
-                grid-template-columns: 1fr;
-                text-align: center;
-            }
-
-            .hero-content h1 {
-                font-size: 3rem;
-            }
-
-            .hero-buttons {
-                justify-content: center;
-            }
-
-            .nav-links {
-                display: none;
-            }
-
-            .academic-content {
-                grid-template-columns: 1fr;
-            }
-
-            .timeline::before {
-                left: 30px;
-            }
-
-            .timeline-item {
-                padding-left: 80px;
-            }
-
-            .timeline-item:nth-child(even) {
-                flex-direction: row;
-            }
-
-            .timeline-number {
-                left: 30px;
-            }
-
-            .section-header h2 {
-                font-size: 2rem;
-            }
-        }
+        .btn-salir:hover  { opacity: .9; }
+        .btn-salir:active { transform: scale(.97); }
     </style>
 </head>
+	
 <body>
-    <!-- Navigation -->
-    <nav id="navbar">
-        <div class="nav-container">
-            <div class="logo">NoctuLight</div>
-            <ul class="nav-links">
-                <li><a href="#inicio">Inicio</a></li>
-                <li><a href="#caracteristicas">Características</a></li>
-                <li><a href="#funcionamiento">Funcionamiento</a></li>
-                <li><a href="#aplicaciones">Aplicaciones</a></li>
-                <li><a href="#proyecto">Proyecto</a></li>
-            </ul>
-        </div>
-    </nav>
+    <div class="container-fluid">
+        <div class="p-3 border rounded">
+            <nav class="navbar navbar-expand-lg">
+                <div class="container-fluid d-flex justify-content-center">
+                    <span class="h5 mb-0 text-white" style="text-shadow: 2px 2px 4px rgba(0,0,0,0.5);">
+                        Ingreso de Equipos IDT
+                    </span>
+                </div>
+            </nav>
 
-    <!-- Hero Section -->
-    <section class="hero" id="inicio">
-        <div class="hero-container">
-            <div class="hero-content">
-                <h1>Iluminación Inteligente que Ahorra Energía</h1>
-                <p>Sistema automático de luz nocturna con sensor LDR. Enciende cuando oscurece, apaga al amanecer. Eficiente, simple y confiable.</p>
-                <div class="hero-buttons">
-                    <a href="#funcionamiento" class="btn btn-primary">Ver Cómo Funciona</a>
-                    <a href="#proyecto" class="btn btn-secondary">Proyecto Académico</a>
+            <br>
+            <div class="row mb-3">
+                <div class="form-group" style="max-width: 300px">
+                    <label for="tipo_equipo"><b>Tipo de equipo a registrar</b></label>
+                    <select name="registro_equipo" id="tipo_equipo" class="form-control">
+                        <option value="0">Seleccione el equipo a registrar</option>
+                        <option value="1">Laptop</option>
+                        <option value="2">Monitor</option>
+                        <option value="3">Cañonera</option>
+                        <option value="4">Switch</option>
+                        <option value="5">Otros</option>
+                    </select>
                 </div>
             </div>
-            <div class="hero-visual">
-                <div class="circuit-display float-animation">
-                    <svg class="circuit-icon" viewBox="0 0 400 400" xmlns="http://www.w3.org/2000/svg">
-                        <!-- Moon/Sun Symbol -->
-                        <circle cx="200" cy="100" r="40" fill="#667eea" opacity="0.2"/>
-                        <circle cx="200" cy="100" r="30" fill="#667eea"/>
-                        
-                        <!-- LDR Sensor -->
-                        <rect x="150" y="150" width="100" height="40" rx="10" fill="#f093fb"/>
-                        <text x="200" y="175" text-anchor="middle" fill="white" font-size="14" font-weight="bold">LDR</text>
-                        
-                        <!-- Transistor -->
-                        <circle cx="200" cy="240" r="25" fill="#4facfe"/>
-                        <text x="200" y="248" text-anchor="middle" fill="white" font-size="12" font-weight="bold">BJT</text>
-                        
-                        <!-- LED -->
-                        <circle cx="200" cy="320" r="30" fill="#10B981"/>
-                        <circle cx="200" cy="320" r="20" fill="#34D399"/>
-                        <circle cx="200" cy="320" r="10" fill="#6EE7B7"/>
-                        
-                        <!-- Connection Lines -->
-                        <line x1="200" y1="140" x2="200" y2="150" stroke="#667eea" stroke-width="3"/>
-                        <line x1="200" y1="190" x2="200" y2="215" stroke="#f093fb" stroke-width="3"/>
-                        <line x1="200" y1="265" x2="200" y2="290" stroke="#4facfe" stroke-width="3"/>
-                        
-                        <!-- Energy Waves -->
-                        <path d="M 140 320 Q 170 300 200 320 Q 230 340 260 320" stroke="#10B981" stroke-width="2" fill="none" opacity="0.5">
-                            <animate attributeName="d" 
-                                     values="M 140 320 Q 170 300 200 320 Q 230 340 260 320;
-                                             M 140 320 Q 170 340 200 320 Q 230 300 260 320;
-                                             M 140 320 Q 170 300 200 320 Q 230 340 260 320"
-                                     dur="2s" repeatCount="indefinite"/>
-                        </path>
-                    </svg>
-                </div>
-            </div>
-        </div>
-    </section>
 
-    <!-- Features Section -->
-    <section class="features" id="caracteristicas">
-        <div class="section-header">
-            <span class="label">CARACTERÍSTICAS</span>
-            <h2>Tecnología Simple, Resultados Extraordinarios</h2>
-            <p>Un sistema de iluminación automática basado en componentes analógicos fundamentales.</p>
-        </div>
-        <div class="features-grid">
-            <div class="feature-card">
-                <div class="feature-icon">🌙</div>
-                <h3>Detección Automática</h3>
-                <p>El sensor LDR detecta los niveles de luz ambiente y activa el sistema solo cuando es necesario, sin intervención manual.</p>
-            </div>
-            <div class="feature-card">
-                <div class="feature-icon">⚡</div>
-                <h3>Ultra Eficiente</h3>
-                <p>Consumo menor a 1mA en reposo. Ahorra hasta 35% en costos de iluminación nocturna comparado con sistemas tradicionales.</p>
-            </div>
-            <div class="feature-card">
-                <div class="feature-icon">🔧</div>
-                <h3>Diseño Simple</h3>
-                <p>Circuito analógico con componentes básicos: LDR, transistor BJT, LED y resistencias. Sin programación ni microcontroladores.</p>
-            </div>
-            <div class="feature-card">
-                <div class="feature-icon">💡</div>
-                <h3>LED de Alta Luminosidad</h3>
-                <p>Iluminación LED blanca de 80-120 lm/W con vida útil superior a 50,000 horas de operación continua.</p>
-            </div>
-            <div class="feature-card">
-                <div class="feature-icon">🌡️</div>
-                <h3>Operación Robusta</h3>
-                <p>Funciona confiablemente en rangos de -10°C a +50°C. Diseñado para compensar variaciones de componentes.</p>
-            </div>
-            <div class="feature-card">
-                <div class="feature-icon">🔋</div>
-                <h3>Bajo Consumo</h3>
-                <p>Compatible con alimentación por batería o solar. Autonomía de más de 6 meses con baterías AA estándar.</p>
-            </div>
-        </div>
-    </section>
+            <br>
+            <div class="col-sm-12 col-md-12 col-lg-12">
 
-    <!-- Technical Specs -->
-    <section class="specs">
-        <div class="specs-container">
-            <div class="section-header">
-                <span class="label">ESPECIFICACIONES</span>
-                <h2>Números que Importan</h2>
-                <p>Rendimiento técnico del sistema de iluminación automática</p>
-            </div>
-            <div class="specs-grid">
-                <div class="spec-item">
-                    <div class="spec-value">35%</div>
-                    <div class="spec-label">Ahorro Energético</div>
-                </div>
-                <div class="spec-item">
-                    <div class="spec-value">&lt;1mA</div>
-                    <div class="spec-label">Consumo en Reposo</div>
-                </div>
-                <div class="spec-item">
-                    <div class="spec-value">50K+</div>
-                    <div class="spec-label">Horas de Vida LED</div>
-                </div>
-                <div class="spec-item">
-                    <div class="spec-value">3.3-12V</div>
-                    <div class="spec-label">Voltaje Operación</div>
-                </div>
-                <div class="spec-item">
-                    <div class="spec-value">0.7V</div>
-                    <div class="spec-label">Umbral Activación</div>
-                </div>
-                <div class="spec-item">
-                    <div class="spec-value">100-300</div>
-                    <div class="spec-label">Ganancia β del BJT</div>
-                </div>
-            </div>
-        </div>
-    </section>
-
-    <!-- How It Works -->
-    <section class="how-it-works" id="funcionamiento">
-        <div class="section-header">
-            <span class="label">FUNCIONAMIENTO</span>
-            <h2>¿Cómo Funciona el Sistema?</h2>
-            <p>Proceso técnico de detección y conmutación automática</p>
-        </div>
-        <div class="timeline">
-            <div class="timeline-item">
-                <div class="timeline-number">1</div>
-                <div class="timeline-content">
-                    <h3>Sensor LDR Detecta Luz</h3>
-                    <p>El fotoresistor (LDR) varía su resistencia según la luz ambiente. En oscuridad: ~1MΩ, con luz: ~50Ω. Este cambio resistivo es la señal de entrada del sistema.</p>
-                </div>
-            </div>
-            <div class="timeline-item">
-                <div class="timeline-number">2</div>
-                <div class="timeline-content">
-                    <h3>Divisor de Voltaje</h3>
-                    <p>El LDR forma un divisor de voltaje con una resistencia fija. La ecuación Vout = VCC·R/(RLDR+R) genera un voltaje proporcional a la iluminación.</p>
-                </div>
-            </div>
-            <div class="timeline-item">
-                <div class="timeline-number">3</div>
-                <div class="timeline-content">
-                    <h3>Transistor Conmuta</h3>
-                    <p>Cuando el voltaje de base supera 0.7V (oscuridad), el transistor BJT entra en saturación, permitiendo flujo de corriente. En luz, el transistor se corta.</p>
-                </div>
-            </div>
-            <div class="timeline-item">
-                <div class="timeline-number">4</div>
-                <div class="timeline-content">
-                    <h3>LED se Enciende</h3>
-                    <p>Con el transistor saturado (VCE < 0.3V), la corriente fluye a través del LED con resistencia limitadora R = (VCC-VF)/IF, iluminando automáticamente.</p>
-                </div>
-            </div>
-        </div>
-    </section>
-
-    <!-- Applications -->
-    <section class="applications" id="aplicaciones">
-        <div class="section-header">
-            <span class="label" style="background: rgba(255,255,255,0.3);">APLICACIONES</span>
-            <h2>Casos de Uso Reales</h2>
-            <p>Dónde puede implementarse este sistema de iluminación inteligente</p>
-        </div>
-        <div class="applications-grid">
-            <div class="app-card">
-                <div class="icon">🏠</div>
-                <h3>Residencial</h3>
-                <p>Pasillos, escaleras, entradas y garajes. Iluminación nocturna automática que mejora la seguridad y reduce el consumo eléctrico.</p>
-            </div>
-            <div class="app-card">
-                <div class="icon">🏢</div>
-                <h3>Comercial</h3>
-                <p>Edificios de oficinas, centros comerciales y estacionamientos. Iluminación de seguridad que opera solo cuando es necesario.</p>
-            </div>
-            <div class="app-card">
-                <div class="icon">🌲</div>
-                <h3>Exterior</h3>
-                <p>Jardines, senderos y áreas públicas. Sistema alimentado por panel solar para iluminación sostenible y autónoma.</p>
-            </div>
-            <div class="app-card">
-                <div class="icon">🔋</div>
-                <h3>Emergencia</h3>
-                <p>Señalización de salidas y rutas de evacuación. Operación confiable con respaldo de batería en caso de cortes eléctricos.</p>
-            </div>
-            <div class="app-card">
-                <div class="icon">🚗</div>
-                <h3>Automotriz</h3>
-                <p>Iluminación interior de vehículos, cajuelas y tableros. Sistema compacto que se activa al abrir puertas en condiciones de baja luz.</p>
-            </div>
-            <div class="app-card">
-                <div class="icon">🏭</div>
-                <h3>Industrial</h3>
-                <p>Almacenes y zonas de carga. Iluminación automática en áreas de tránsito ocasional para optimizar el consumo energético.</p>
-            </div>
-        </div>
-    </section>
-
-    <!-- Academic Section -->
-    <section class="academic" id="proyecto">
-        <div class="section-header">
-            <span class="label">PROYECTO ACADÉMICO</span>
-            <h2>Desarrollo Universitario</h2>
-            <p>Proyecto de Electrónica Analógica - Universidad Mariano Gálvez</p>
-        </div>
-        <div class="academic-content">
-            <div class="academic-info">
-                <div class="info-item">
-                    <div class="icon">🎓</div>
-                    <div class="text">
-                        <strong>Universidad</strong>
-                        <span>Universidad Mariano Gálvez de Guatemala</span>
+                <!-- LAPTOP -->
+                <div id="ing_laptop" class="ingreso_equipo" style="display: none">
+                    <div class="row mb-3"><div><strong>Registro de Laptop</strong></div></div>
+                    <div class="row mb-3">
+                        <div class="col-md-6 form-group">
+                            <label>MARCA</label>
+                            <select class="form-control" id="marca_equipo_laptop">
+                                <option value="">Seleccione la marca</option>
+                                <option value="HP">HP</option>
+                                <option value="DELL">DELL</option>
+                                <option value="LENOVO">LENOVO</option>
+                                <option value="OTRO MARCA">OTRO MARCA</option>
+                            </select>
+                        </div>
+                        <div class="col-md-6 form-group">
+                            <label>MODELO</label>
+                            <input type="text" id="modelo_equipo_laptop" class="form-control text-uppercase"
+                                   oninput="this.value=this.value.toUpperCase()"
+                                   placeholder="INGRESE EL MODELO DE LA LAPTOP">
+                        </div>
+                    </div>
+                    <div class="row mb-3">
+                        <div class="col-md-6 form-group">
+                            <label>Num. Serie</label>
+                            <input type="text" id="serie_equip_laptop" class="form-control text-uppercase"
+                                   oninput="this.value=this.value.toUpperCase(); validarCampoEnVivo(this,'serie','fb_serie_laptop')"
+                                   placeholder="EJE. 5DC5648D">
+                            <div id="fb_serie_laptop" class="feedback-campo"></div>
+                        </div>
+                        <div class="col-md-6 form-group">
+                            <label>Num. Activo</label>
+                            <input type="text" id="num_activo_laptop" class="form-control text-uppercase"
+                                   oninput="this.value=this.value.toUpperCase(); validarCampoEnVivo(this,'activo','fb_activo_laptop')"
+                                   placeholder="EJE. 009783">
+                            <div id="fb_activo_laptop" class="feedback-campo"></div>
+                        </div>
+                    </div>
+                    <div class="row mb-3">
+                        <div class="col-md-6 form-group">
+                            <label>Estado</label>
+                            <select class="form-control" id="est_laptop">
+                                <option value="">Seleccione el estado...</option>
+                                <option value="NUEVO">NUEVO</option>
+                                <option value="USADO">USADO</option>
+                            </select>
+                        </div>
+                        <div class="col-md-6 form-group">
+                            <label>Condición</label>
+                            <select class="form-control" id="condi_equip_laptop">
+                                <option value="">Seleccione la condición...</option>
+                                <option value="NUEVO">NUEVO</option>
+                                <option value="EXCELENTE">EXCELENTE</option>
+                                <option value="BUENA">BUENA</option>
+                                <option value="USADO">USADO</option>
+                                <option value="MALO">MALO</option>
+                                <option value="OBSOLETO">OBSOLETO</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="row mb-3">
+                        <div class="col-md-12">
+                            <label class="fw-bold">Observaciones / Comentarios</label>
+                            <textarea id="obs_equipo_lap" class="form-control text-uppercase" rows="3"
+                                      placeholder="INGRESE DETALLES ADICIONALES"
+                                      oninput="this.value=this.value.toUpperCase()"></textarea>
+                        </div>
                     </div>
                 </div>
-                <div class="info-item">
-                    <div class="icon">📚</div>
-                    <div class="text">
-                        <strong>Curso</strong>
-                        <span>Electrónica Analógica</span>
-                    </div>
-                </div>
-                <div class="info-item">
-                    <div class="icon">👨‍🏫</div>
-                    <div class="text">
-                        <strong>Docente</strong>
-                        <span>MSc. Edgar N. Carrera</span>
-                    </div>
-                </div>
-                <div class="info-item">
-                    <div class="icon">🎯</div>
-                    <div class="text">
-                        <strong>Objetivo</strong>
-                        <span>Diseñar e implementar un sistema de iluminación nocturna automática utilizando fotoresistor (LDR) y transistores bipolares</span>
-                    </div>
-                </div>
-                <div class="info-item">
-                    <div class="icon">🔬</div>
-                    <div class="text">
-                        <strong>Componentes</strong>
-                        <span>LDR (CdS), Transistor NPN (2N2222/BC547), LED blanco, resistencias, fuente 5-12V DC</span>
-                    </div>
-                </div>
-                <div class="info-item">
-                    <div class="icon">📊</div>
-                    <div class="text">
-                        <strong>Fundamentos Teóricos</strong>
-                        <span>Divisores de voltaje, polarización de BJT, conmutación saturación/corte, análisis de circuitos DC</span>
-                    </div>
-                </div>
-            </div>
-            <div>
-               <img src="Captura de pantalla 2026-05-28 194405.png" alt="Diagrama" width="400" height="300">
-            </div>
-        </div>
-    </section>
 
-    <!-- CTA Section -->
-    <section class="cta">
-        <h2>¿Listo para Implementar?</h2>
-        <p>Descarga la documentación técnica completa, esquemas de circuito y lista de materiales para construir tu propio sistema de iluminación automática.</p>
-        <div class="hero-buttons">
-            <a href="https://github.com/aexi55/noctuligth/commit/aca5d491bcc22b798c7c2a5e35b182da945c79e9" class="btn btn-primary">Descargar Documentación PDF</a>
-        </div>
-    </section>
+                <div id="ing_monitor" class="ingreso_equipo" style="display: none">
+                    <div class="row mb-3"><div><strong>Registro de Monitor</strong></div></div>
+                    <div class="row mb-3">
+                        <div class="col-md-6 form-group">
+                            <label>MARCA</label>
+                            <select class="form-control" id="marca_equipo_mon">
+                                <option value="">Seleccione la marca</option>
+                                <option value="HP">HP</option>
+                                <option value="DELL">DELL</option>
+                                <option value="LENOVO">LENOVO</option>
+                                <option value="SAMSUNG">SAMSUNG</option>
+                                <option value="OTRA MARCA">OTRA MARCA</option>
+                            </select>
+                        </div>
+                        <div class="col-md-6 form-group">
+                            <label>MODELO</label>
+                            <input type="text" id="modelo_equipo_mon" class="form-control text-uppercase"
+                                   oninput="this.value=this.value.toUpperCase()"
+                                   placeholder="INGRESE EL MODELO DEL MONITOR">
+                        </div>
+                    </div>
+                    <div class="row mb-3">
+                        <div class="col-md-6 form-group">
+                            <label>Num. Serie</label>
+                            <input type="text" id="serie_equip_mon" class="form-control text-uppercase"
+                                   oninput="this.value=this.value.toUpperCase(); validarCampoEnVivo(this,'serie','fb_serie_mon')"
+                                   placeholder="EJE. 484SFA">
+                            <div id="fb_serie_mon" class="feedback-campo"></div>
+                        </div>
+                        <div class="col-md-6 form-group">
+                            <label>Num. Activo</label>
+                            <input type="text" id="num_activo_mon" class="form-control text-uppercase"
+                                   oninput="this.value=this.value.toUpperCase(); validarCampoEnVivo(this,'activo','fb_activo_mon')"
+                                   placeholder="EJE. 003489">
+                            <div id="fb_activo_mon" class="feedback-campo"></div>
+                        </div>
+                    </div>
+                    <div class="row mb-3">
+                        <div class="col-md-6 form-group">
+                            <label>Estado</label>
+                            <select class="form-control" id="est_mon">
+                                <option value="">Seleccione el estado...</option>
+                                <option value="NUEVO">NUEVO</option>
+                                <option value="USADO">USADO</option>
+                            </select>
+                        </div>
+                        <div class="col-md-6 form-group">
+                            <label>Condición</label>
+                            <select class="form-control" id="condi_equip_mon">
+                                <option value="">Seleccione la condición...</option>
+                                <option value="NUEVO">NUEVO</option>
+                                <option value="EXCELENTE">EXCELENTE</option>
+                                <option value="BUENA">BUENA</option>
+                                <option value="USADO">USADO</option>
+                                <option value="MALO">MALO</option>
+                                <option value="OBSOLETO">OBSOLETO</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="row mb-3">
+                        <div class="col-md-12">
+                            <label class="fw-bold">Observaciones / Comentarios</label>
+                            <textarea id="obs_equipo_mon" class="form-control text-uppercase" rows="3"
+                                      placeholder="INGRESE DETALLES ADICIONALES"
+                                      oninput="this.value=this.value.toUpperCase()"></textarea>
+                        </div>
+                    </div>
+                </div>
 
-    <!-- Footer -->
-    <footer>
-        <p><strong>NoctuLight</strong> - Proyecto de Electrónica Analógica</p>
-        <p>Universidad Mariano Gálvez de Guatemala • Ingeniería en Sistemas</p>
-        <p style="margin-top: 2rem; opacity: 0.5;">© 2026 Proyecto Académico - Uso Educativo</p>
-        <div class="social-links">
-            <a href="#">📧</a>
-            <a href="#">💼</a>
-            <a href="#">🔗</a>
+                <div id="ing_canon" class="ingreso_equipo" style="display: none">
+                    <div class="row mb-3"><div><strong>Registro de Cañonera</strong></div></div>
+                    <div class="row mb-3">
+                        <div class="col-md-6 form-group">
+                            <label>MARCA</label>
+                            <select class="form-control" id="marca_equipo_cano">
+                                <option value="">Seleccione la marca</option>
+                                <option value="EPSON">EPSON</option>
+                                <option value="OTRA MARCA">OTRA MARCA</option>
+                            </select>
+                        </div>
+                        <div class="col-md-6 form-group">
+                            <label>MODELO</label>
+                            <input type="text" id="modelo_equipo_cano" class="form-control text-uppercase"
+                                   oninput="this.value=this.value.toUpperCase()"
+                                   placeholder="INGRESE EL MODELO DE CAÑONERA">
+                        </div>
+                    </div>
+                    <div class="row mb-3">
+                        <div class="col-md-6 form-group">
+                            <label>Num. Serie</label>
+                            <input type="text" id="serie_equip_cano" class="form-control text-uppercase"
+                                   oninput="this.value=this.value.toUpperCase(); validarCampoEnVivo(this,'serie','fb_serie_cano')"
+                                   placeholder="EJE. AS1894A">
+                            <div id="fb_serie_cano" class="feedback-campo"></div>
+                        </div>
+                        <div class="col-md-6 form-group">
+                            <label>Num. Activo</label>
+                            <input type="text" id="num_activo_cano" class="form-control text-uppercase"
+                                   oninput="this.value=this.value.toUpperCase(); validarCampoEnVivo(this,'activo','fb_activo_cano')"
+                                   placeholder="EJE. 000490">
+                            <div id="fb_activo_cano" class="feedback-campo"></div>
+                        </div>
+                    </div>
+                    <div class="row mb-3">
+                        <div class="col-md-6 form-group">
+                            <label>Estado</label>
+                            <select class="form-control" id="est_cano">
+                                <option value="">Seleccione el estado...</option>
+                                <option value="NUEVO">NUEVO</option>
+                                <option value="USADO">USADO</option>
+                            </select>
+                        </div>
+                        <div class="col-md-6 form-group">
+                            <label>Condición</label>
+                            <select class="form-control" id="condi_equip_cano">
+                                <option value="">Seleccione la condición...</option>
+                                <option value="NUEVO">NUEVO</option>
+                                <option value="EXCELENTE">EXCELENTE</option>
+                                <option value="BUENA">BUENA</option>
+                                <option value="USADO">USADO</option>
+                                <option value="MALO">MALO</option>
+                                <option value="OBSOLETO">OBSOLETO</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="row mb-3">
+                        <div class="col-md-12">
+                            <label class="fw-bold">Observaciones / Comentarios</label>
+                            <textarea id="obs_equipo_cano" class="form-control text-uppercase" rows="3"
+                                      placeholder="INGRESE DETALLES ADICIONALES"
+                                      oninput="this.value=this.value.toUpperCase()"></textarea>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="ing_switch" class="ingreso_equipo" style="display: none">
+                    <div class="row mb-3"><div><strong>Registro de Switch</strong></div></div>
+                    <div class="row mb-3">
+                        <div class="col-md-6 form-group">
+                            <label>MARCA</label>
+                            <select class="form-control" id="marca_equipo_switch">
+                                <option value="">Seleccione la marca</option>
+                                <option value="FORTINET">FORTINET</option>
+                                <option value="OTROS">OTROS</option>
+                            </select>
+                        </div>
+                        <div class="col-md-6 form-group">
+                            <label>MODELO</label>
+                            <input type="text" id="modelo_equipo_switch" class="form-control text-uppercase"
+                                   oninput="this.value=this.value.toUpperCase()"
+                                   placeholder="INGRESE EL MODELO DEL SWITCH">
+                        </div>
+                    </div>
+                    <div class="row mb-3">
+                        <div class="col-md-6 form-group">
+                            <label>Num. Serie</label>
+                            <input type="text" id="serie_equip_switch" class="form-control text-uppercase"
+                                   oninput="this.value=this.value.toUpperCase(); validarCampoEnVivo(this,'serie','fb_serie_switch')"
+                                   placeholder="EJE. A49ASD">
+                            <div id="fb_serie_switch" class="feedback-campo"></div>
+                        </div>
+                        <div class="col-md-6 form-group">
+                            <label>Num. Activo</label>
+                            <input type="text" id="num_activo_switch" class="form-control text-uppercase"
+                                   oninput="this.value=this.value.toUpperCase(); validarCampoEnVivo(this,'activo','fb_activo_switch')"
+                                   placeholder="EJE. 000397">
+                            <div id="fb_activo_switch" class="feedback-campo"></div>
+                        </div>
+                    </div>
+                    <div class="row mb-3">
+                        <div class="col-md-6 form-group">
+                            <label>Estado</label>
+                            <select class="form-control" id="est_switch">
+                                <option value="">Seleccione el estado...</option>
+                                <option value="NUEVO">NUEVO</option>
+                                <option value="USADO">USADO</option>
+                            </select>
+                        </div>
+                        <div class="col-md-6 form-group">
+                            <label>Condición</label>
+                            <select class="form-control" id="condi_equip_switch">
+                                <option value="">Seleccione la condición...</option>
+                                <option value="NUEVO">NUEVO</option>
+                                <option value="EXCELENTE">EXCELENTE</option>
+                                <option value="BUENA">BUENA</option>
+                                <option value="USADO">USADO</option>
+                                <option value="MALO">MALO</option>
+                                <option value="OBSOLETO">OBSOLETO</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="row mb-3">
+                        <div class="col-md-12">
+                            <label class="fw-bold">Observaciones / Comentarios</label>
+                            <textarea id="obs_equipo_switch" class="form-control text-uppercase" rows="3"
+                                      placeholder="INGRESE DETALLES ADICIONALES"
+                                      oninput="this.value=this.value.toUpperCase()"></textarea>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="ing_otros" class="ingreso_equipo" style="display: none">
+                    <div class="row mb-3"><div><strong>Registro para otros equipos</strong></div></div>
+                    <div class="row mb-3">
+                        <div class="col-md-6 form-group">
+                            <label>MARCA</label>
+                            <select class="form-control" id="marca_equipo_otros">
+                                <option value="">Seleccione la marca</option>
+                                <option value="OTROS">OTROS</option>
+                            </select>
+                        </div>
+                        <div class="col-md-6 form-group">
+                            <label>MODELO</label>
+                            <input type="text" id="modelo_equipo_otros" class="form-control text-uppercase"
+                                   oninput="this.value=this.value.toUpperCase()"
+                                   placeholder="INGRESE EL MODELO DEL EQUIPO">
+                        </div>
+                    </div>
+                    <div class="row mb-3">
+                        <div class="col-md-6 form-group">
+                            <label>Num. Serie</label>
+                            <input type="text" id="serie_equip_otros" class="form-control text-uppercase"
+                                   oninput="this.value=this.value.toUpperCase(); validarCampoEnVivo(this,'serie','fb_serie_otros')"
+                                   placeholder="EJE. 16AD8E">
+                            <div id="fb_serie_otros" class="feedback-campo"></div>
+                        </div>
+                        <div class="col-md-6 form-group">
+                            <label>Num. Activo</label>
+                            <input type="text" id="num_activo_otros" class="form-control text-uppercase"
+                                   oninput="this.value=this.value.toUpperCase(); validarCampoEnVivo(this,'activo','fb_activo_otros')"
+                                   placeholder="EJE. 000148">
+                            <div id="fb_activo_otros" class="feedback-campo"></div>
+                        </div>
+                    </div>
+                    <div class="row mb-3">
+                        <div class="col-md-6 form-group">
+                            <label>Estado</label>
+                            <select class="form-control" id="est_otros">
+                                <option value="">Seleccione el estado...</option>
+                                <option value="NUEVO">NUEVO</option>
+                                <option value="USADO">USADO</option>
+                            </select>
+                        </div>
+                        <div class="col-md-6 form-group">
+                            <label>Condición</label>
+                            <select class="form-control" id="condi_equip_otros">
+                                <option value="">Seleccione la condición...</option>
+                                <option value="NUEVO">NUEVO</option>
+                                <option value="EXCELENTE">EXCELENTE</option>
+                                <option value="BUENA">BUENA</option>
+                                <option value="USADO">USADO</option>
+                                <option value="MALO">MALO</option>
+                                <option value="OBSOLETO">OBSOLETO</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="row mb-3">
+                        <div class="col-md-12">
+                            <label class="fw-bold">Observaciones / Comentarios</label>
+                            <textarea id="obs_equipo_otros" class="form-control text-uppercase" rows="3"
+                                      placeholder="INGRESE DETALLES ADICIONALES"
+                                      oninput="this.value=this.value.toUpperCase()"></textarea>
+                        </div>
+                    </div>
+                </div>
+
+                <button type="button" onclick="ingreso_equipo();" id="btnIngresar" class="btn btn-primary">
+                    Ingresar registro
+                </button>
+                <button type="button" onclick="cancelar();" class="btn btn-secondary">
+                    Volver
+                </button>
+                <button type="button" onclick="irAConsulta();" class="btn btn-outline-primary">
+                    Ir a Consultas
+                </button>
+
+            </div>
         </div>
-    </footer>
+    </div>
+
+    <button class="btn-salir" onclick="cerrarSesion()"> Salir</button>
 
     <script>
-        // Navbar scroll effect
-        window.addEventListener('scroll', function() {
-            const navbar = document.getElementById('navbar');
-            if (window.scrollY > 50) {
-                navbar.classList.add('scrolled');
-            } else {
-                navbar.classList.remove('scrolled');
-            }
-        });
+        const API_URL = "http://127.0.0.1:8000";
 
-        // Smooth scrolling for anchor links
-        document.querySelectorAll('a[href^="#"]').forEach(anchor => {
-            anchor.addEventListener('click', function (e) {
-                e.preventDefault();
-                const target = document.querySelector(this.getAttribute('href'));
-                if (target) {
-                    target.scrollIntoView({
-                        behavior: 'smooth',
-                        block: 'start'
-                    });
+        let inventarioCache = [];
+
+        async function cargarInventario() {
+            try {
+                const res  = await fetch(`${API_URL}/inventario`);
+                const data = await res.json();
+                inventarioCache = data.inventario || [];
+            } catch {
+                inventarioCache = [];
+            }
+        }
+
+        cargarInventario();
+
+        function irAConsulta() { window.location.href = "consulta.html"; }
+
+        function cerrarSesion() {
+            swal({
+                title: "¿Deseas salir?",
+                text:  "Se cerrará la sesión actual.",
+                icon:  "warning",
+                buttons: {
+                    cancel:  "Cancelar",
+                    confirm: { text: "Sí, salir", className: "btn-danger" }
+                }
+            }).then((confirm) => {
+                if (confirm) window.location.href = "login.html";
+            });
+        }
+
+        const timers = {};
+        function debounce(key, fn, delay = 350) {
+            clearTimeout(timers[key]);
+            timers[key] = setTimeout(fn, delay);
+        }
+
+        function validarCampoEnVivo(input, tipo, fbId) {
+            const valor = input.value.trim();
+            const fb    = document.getElementById(fbId);
+
+            if (!valor) {
+                setFeedback(input, fb, '', '');
+                return;
+            }
+
+            setFeedback(input, fb, 'checking', '<span class="spinner-field"></span> Verificando...');
+
+            debounce(fbId, () => {
+                const campo  = tipo === 'serie' ? 'serie' : 'activo';
+                const existe = inventarioCache.some(
+                    e => e[campo] && e[campo].toUpperCase() === valor.toUpperCase()
+                );
+
+                if (existe) {
+                    setFeedback(input, fb, 'error', `✖ Ya existe un equipo con este ${tipo}`);
+                } else {
+                    setFeedback(input, fb, 'ok', '✔ Disponible');
                 }
             });
-        });
+        }
 
-        // Intersection Observer for fade-in animations
-        const observerOptions = {
-            threshold: 0.1,
-            rootMargin: '0px 0px -100px 0px'
+        function setFeedback(input, fb, estado, html) {
+            fb.innerHTML = html;
+            fb.className = 'feedback-campo ' + estado;
+            input.classList.remove('campo-ok', 'campo-error');
+            if (estado === 'ok')    input.classList.add('campo-ok');
+            if (estado === 'error') input.classList.add('campo-error');
+        }
+
+        const opt = document.getElementById("tipo_equipo");
+        if (opt) {
+            opt.addEventListener("change", function(e) {
+                const v = e.target.value;
+                document.getElementById("ing_laptop").style.display  = (v === "1") ? "block" : "none";
+                document.getElementById("ing_monitor").style.display = (v === "2") ? "block" : "none";
+                document.getElementById("ing_canon").style.display   = (v === "3") ? "block" : "none";
+                document.getElementById("ing_switch").style.display  = (v === "4") ? "block" : "none";
+                document.getElementById("ing_otros").style.display   = (v === "5") ? "block" : "none";
+            });
+        }
+
+        const camposPorTipo = {
+            "1": {
+                tipo: "Laptop",
+                marca:     () => document.getElementById("marca_equipo_laptop").value,
+                modelo:    () => document.getElementById("modelo_equipo_laptop").value,
+                serie:     () => document.getElementById("serie_equip_laptop").value,
+                activo:    () => document.getElementById("num_activo_laptop").value,
+                estado:    () => document.getElementById("est_laptop").value,
+                condicion: () => document.getElementById("condi_equip_laptop").value,
+                comentario:() => document.getElementById("obs_equipo_lap").value,
+            },
+            "2": {
+                tipo: "Monitor",
+                marca:     () => document.getElementById("marca_equipo_mon").value,
+                modelo:    () => document.getElementById("modelo_equipo_mon").value,
+                serie:     () => document.getElementById("serie_equip_mon").value,
+                activo:    () => document.getElementById("num_activo_mon").value,
+                estado:    () => document.getElementById("est_mon").value,
+                condicion: () => document.getElementById("condi_equip_mon").value,
+                comentario:() => document.getElementById("obs_equipo_mon").value,
+            },
+            "3": {
+                tipo: "Cañonera",
+                marca:     () => document.getElementById("marca_equipo_cano").value,
+                modelo:    () => document.getElementById("modelo_equipo_cano").value,
+                serie:     () => document.getElementById("serie_equip_cano").value,
+                activo:    () => document.getElementById("num_activo_cano").value,
+                estado:    () => document.getElementById("est_cano").value,
+                condicion: () => document.getElementById("condi_equip_cano").value,
+                comentario:() => document.getElementById("obs_equipo_cano").value,
+            },
+            "4": {
+                tipo: "Switch",
+                marca:     () => document.getElementById("marca_equipo_switch").value,
+                modelo:    () => document.getElementById("modelo_equipo_switch").value,
+                serie:     () => document.getElementById("serie_equip_switch").value,
+                activo:    () => document.getElementById("num_activo_switch").value,
+                estado:    () => document.getElementById("est_switch").value,
+                condicion: () => document.getElementById("condi_equip_switch").value,
+                comentario:() => document.getElementById("obs_equipo_switch").value,
+            },
+            "5": {
+                tipo: "Otros",
+                marca:     () => document.getElementById("marca_equipo_otros").value,
+                modelo:    () => document.getElementById("modelo_equipo_otros").value,
+                serie:     () => document.getElementById("serie_equip_otros").value,
+                activo:    () => document.getElementById("num_activo_otros").value,
+                estado:    () => document.getElementById("est_otros").value,
+                condicion: () => document.getElementById("condi_equip_otros").value,
+                comentario:() => document.getElementById("obs_equipo_otros").value,
+            }
         };
 
-        const observer = new IntersectionObserver(function(entries) {
-            entries.forEach(entry => {
-                if (entry.isIntersecting) {
-                    entry.target.style.opacity = '1';
-                    entry.target.style.transform = 'translateY(0)';
-                }
-            });
-        }, observerOptions);
+        function ingreso_equipo() {
+            const tipo = document.getElementById("tipo_equipo").value;
 
-        // Observe all feature cards and app cards
-        document.querySelectorAll('.feature-card, .app-card, .timeline-item').forEach(el => {
-            el.style.opacity = '0';
-            el.style.transform = 'translateY(30px)';
-            el.style.transition = 'opacity 0.6s ease-out, transform 0.6s ease-out';
-            observer.observe(el);
-        });
+            if (tipo === "0") {
+                swal("Atención", "Seleccione el tipo de equipo a registrar", "warning");
+                return;
+            }
+
+            const campos = camposPorTipo[tipo];
+
+            if (!campos.marca())      { swal("Validar datos", "Seleccione la marca del equipo", "error");       return; }
+            if (!campos.modelo())     { swal("Validar datos", "Ingrese el modelo del equipo", "error");         return; }
+            if (!campos.serie())      { swal("Validar datos", "Ingrese el número de serie", "error");           return; }
+            if (!campos.activo())     { swal("Validar datos", "Ingrese el número de activo", "error");          return; }
+            if (!campos.estado())     { swal("Validar datos", "Seleccione el estado del equipo", "error");      return; }
+            if (!campos.condicion())  { swal("Validar datos", "Seleccione la condición del equipo", "error");   return; }
+            if (!campos.comentario()) { swal("Validar datos", "Ingrese una observación o comentario", "error"); return; }
+
+            const serieDup  = inventarioCache.some(e => e.serie  && e.serie.toUpperCase()  === campos.serie().toUpperCase());
+            const activoDup = inventarioCache.some(e => e.activo && e.activo.toUpperCase() === campos.activo().toUpperCase());
+
+            if (serieDup) {
+                swal("Serie duplicada", `Ya existe un equipo con la serie "${campos.serie()}". Corrija el número antes de continuar.`, "error");
+                return;
+            }
+            if (activoDup) {
+                swal("Activo duplicado", `Ya existe un equipo con el activo "${campos.activo()}". Corrija el número antes de continuar.`, "error");
+                return;
+            }
+
+            swal({
+                title: "¿Desea ingresar este equipo al sistema?",
+                text:  "Asegúrese de que la información sea correcta.",
+                icon:  "warning",
+                buttons: {
+                    cancel:  "Cancelar",
+                    confirm: { text: "Sí, continuar", className: "btn-success" }
+                }
+            }).then((confirm) => {
+                if (confirm) enviarAFastAPI(campos);
+            });
+        }
+
+        async function enviarAFastAPI(campos) {
+            const hoy    = new Date().toISOString().split("T")[0];
+            const serie  = campos.serie();
+            const activo = campos.activo();
+
+            const payload = {
+                tipo_equipo:         campos.tipo,
+                marca:               campos.marca(),
+                modelo:              campos.modelo(),
+                serie:               serie,
+                activo:              activo,
+                estado:              campos.estado(),
+                condicion_equipo:    campos.condicion(),
+                comentario:          campos.comentario(),
+                fecha_compra:        hoy,
+                fecha_asig:          null,
+                fecha_mantenimiento: null,
+                usur_ingresa:        null,
+                foto_equipo:         null
+            };
+
+            try {
+                const response = await fetch(`${API_URL}/inventario`, {
+                    method:  "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body:    JSON.stringify(payload)
+                });
+
+                if (response.ok) {
+                    const data = await response.json();
+                    await cargarInventario();
+                    swal("¡Éxito!", `Equipo registrado correctamente. ID asignado: #${data.id_equipo}`, "success");
+                    limpiarFormulario();
+                } else {
+                    const error = await response.json();
+                    swal("Error", "No se pudo registrar: " + (error.detail || "Error desconocido"), "error");
+                }
+            } catch {
+                swal("Error de conexión", "No se pudo conectar con la API. Verifique que FastAPI esté corriendo.", "error");
+            }
+        }
+
+        function limpiarFormulario() {
+            document.getElementById("tipo_equipo").value = "0";
+            document.querySelectorAll(".ingreso_equipo").forEach(el => el.style.display = "none");
+            document.querySelectorAll("input[type='text'], textarea, select").forEach(el => {
+                if (el.id !== "tipo_equipo") el.value = "";
+            });
+            document.querySelectorAll(".feedback-campo").forEach(fb => {
+                fb.innerHTML = "";
+                fb.className = "feedback-campo";
+            });
+            document.querySelectorAll(".campo-ok, .campo-error").forEach(el => {
+                el.classList.remove("campo-ok", "campo-error");
+            });
+        }
+
+        function cancelar() { limpiarFormulario(); }
     </script>
 </body>
 </html>
